@@ -50,6 +50,14 @@ function updateMap() {
 
         let name_map = res[1].value;
 
+        let max = data.length > 0
+            ? Math.max.apply(Math, data.map(e => e.value))
+            : Number.MAX_VALUE;
+
+        let min = data.length > 0
+            ? (Math.min.apply(Math, data.map(e => e.value)) < max ? Math.min.apply(Math, data.map(e => e.value)) : 0)
+            : 0;
+
         let option = {
             tooltip: {
                 trigger: 'item',
@@ -62,12 +70,8 @@ function updateMap() {
             },
             visualMap: {
                 show: true,
-                min: data.length > 0
-                    ? (Math.min.apply(Math, data.map(e => e.value)) > 0 ? Math.min.apply(Math, data.map(e => e.value)) : 0)
-                    : 0,
-                max: data.length > 0
-                    ? (Math.max.apply(Math, data.map(e => e.value)))
-                    : Number.MAX_VALUE,
+                min: min,
+                max: max,
                 inRange: {
                     color: [
                         '#6060f0',
