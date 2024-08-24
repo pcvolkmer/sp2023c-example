@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Studienprotokoll-2023 Teil C Beispiel</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <header class="stickyhead">
+        <div class="content">
+            <h1>Beispiel Studienprotokoll 2023 - Teil C</h1>
+            <h2>Visuelle Auswertungen - Beispiel der Darstellung</h2>
+            <p>
+                <strong>Achtung!</strong>
+                <br>
+                Die hier dargestellten Daten sind randomisiert und entsprechen nicht tatsächlichen Werten
+                eines onkologischen Zentrums.
+            </p>
+        </div>
+    </header>
+
+    <main>
+        <select id="mode" onchange="updateMap()">
+            <option value="incidence">Inzidenz pro 100.000 Einwohner</option>
+            <option value="absolut">Anzahl der Fälle</option>
+        </select>
+        <div style="display: flex; gap: 1rem">
+            <div id="chart"></div>
+            <div id="settings">
+                <h4>Der Darstellung zugrundeliegende Daten filtern</h4>
+                <form onchange="updateMap()" onreset="setTimeout(updateMap, 250);">
+                    <fieldset>
+                        <legend>Patienten</legend>
+                        <div>
+                            <label for="sex">
+                                Geschlecht:
+                            </label>
+                            <select id="sex">
+                                <option value="">Alle Patienten</option>
+                                <option value="M">männlich</option>
+                                <option value="W">weiblich</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="bf">
+                                Jahrgang von:
+                            </label>
+                            <div class="slide">
+                                <input id="bf" type="range" min="1900" max="2000" value="1900" step="10" />
+                                <span id="bf-value">1900</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="bt">
+                                Jahrgang bis:
+                            </label>
+                            <div class="slide">
+                                <input id="bt" type="range" min="1909" max="2009" value="2009" step="10" />
+                                <span id="bt-value">2009</span>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Erkrankung</legend>
+                        <div>
+                            <label for="en">
+                                Entität:
+                            </label>
+                            <select id="en">
+                                <option value="">Alle Entitäten</option>
+                                <option>C00-C14</option>
+                                <option>C15</option>
+                                <option>C16</option>
+                                <option>C18-C21</option>
+                                <option>C22</option>
+                                <option>C23-C24</option>
+                                <option>C25</option>
+                                <option>C32</option>
+                                <option>C33-C34</option>
+                                <option>C43</option>
+                                <option>C50, D05</option>
+                                <option>C53, D06</option>
+                                <option>C54-C55</option>
+                                <option>C56, D39.1</option>
+                                <option>C61</option>
+                                <option>C62</option>
+                                <option>C64</option>
+                                <option>C67, D09.0, D41.4</option>
+                                <option>C70-C72</option>
+                                <option>C73</option>
+                                <option>C81</option>
+                                <option>C82-C88, C96</option>
+                                <option>C90</option>
+                                <option>C91-C95</option>
+                                <option value="Other">Andere Entitäten</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="df">
+                                Diagnosen von:
+                            </label>
+                            <div class="slide">
+                                <input id="df" type="range" min="2014" max="2024" value="2014" />
+                                <span id="df-value">2014</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="dt">
+                                Diagnosen bis:
+                            </label>
+                            <div class="slide">
+                                <input id="dt" type="range" min="2014" max="2024" value="2024" />
+                                <span id="dt-value">2024</span>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Therapie</legend>
+                        <div>
+                            <label for="so">
+                                Standort:
+                            </label>
+                            <select id="so">
+                                <option>Alle Standorte</option>
+                                <option>Beispielstandort</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="stat">
+                                Status:
+                            </label>
+                            <select id="stat">
+                                <option>Alles</option>
+                            </select>
+                        </div>
+                    </fieldset>
+
+                    <button type="reset">Zurück setzen</button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script src="assets/echarts.min.js"></script>
+    <script src="assets/script.js"></script>
+    <script>
+        window.onload = () => {
+            var chart;
+            drawMap();
+        };
+    </script>
+</body>
+</html>
