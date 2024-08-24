@@ -5,7 +5,7 @@ use std::{env, fs};
 
 use askama::Template;
 use axum::body::Body;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, Query};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -74,7 +74,7 @@ impl Entry {
             diagnosis_year: u32::from_str(record.get(2).unwrap()).unwrap(),
             birth_decade: u32::from_str(record.get(3).unwrap()).unwrap(),
             sex: record.get(4).unwrap().to_string(),
-            count: u32::from_str(&record.get(5).unwrap()).unwrap_or(0),
+            count: u32::from_str(record.get(5).unwrap()).unwrap_or(0),
         }
     }
 }
@@ -242,10 +242,7 @@ async fn api_search(query: Query<HashMap<String, String>>) -> Response {
     Json::from(filtered_entries).into_response()
 }
 
-async fn index(
-    State(cache): State<Cache<String, Vec<Entry>>>,
-    query: Query<HashMap<String, String>>,
-) -> IndexTemplate {
+async fn index() -> IndexTemplate {
     IndexTemplate {}
 }
 
