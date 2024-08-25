@@ -1,3 +1,84 @@
+function onInputBf() {
+    let bf = document.getElementById('bf');
+    let bt = document.getElementById('bt');
+
+    if (parseInt(bf.value) >= parseInt(bt.value)-9) {
+        bf.value = parseInt(bt.value)-9;
+    }
+
+    updateTrackB();
+}
+
+function onInputBt() {
+    let bf = document.getElementById('bf');
+    let bt = document.getElementById('bt');
+
+    if (parseInt(bf.value) === parseInt(bf.max)) {
+        bf.value = parseInt(bt.value)-9;
+    }
+
+    if (parseInt(bf.value) >= parseInt(bt.value)-9) {
+        bt.value = parseInt(bf.value)+9;
+    }
+
+    updateTrackB();
+}
+
+function updateTrackB() {
+    let bf = document.getElementById('bf');
+    let bt = document.getElementById('bt');
+    let trackb = document.getElementById('trackb');
+
+    let start = (bf.min - bf.value) / (bf.min - bf.max) * 100;
+    let end = (bt.min - bt.value) / (bt.min - bt.max) * 100;
+    trackb.style = `background: linear-gradient(to right, #ccc ${start}%, var(--blue) ${start}%, var(--blue) ${end}%, #ccc ${end}%)`;
+
+    let value = document.getElementById('b-value');
+    value.innerText = `${bf.value} - ${bt.value}`;
+}
+
+function onInputDf() {
+    let df = document.getElementById('df');
+    let dt = document.getElementById('dt');
+
+    if (parseInt(df.value) >= parseInt(dt.value)) {
+        df.value = parseInt(dt.value);
+    }
+
+    updateTrackD();
+}
+
+function onInputDt() {
+    let df = document.getElementById('df');
+    let dt = document.getElementById('dt');
+
+    if (parseInt(df.value) === parseInt(df.max)) {
+        df.value = parseInt(dt.value);
+    }
+
+    if (parseInt(df.value) >= parseInt(dt.value)) {
+        dt.value = parseInt(df.value);
+    }
+
+    updateTrackD();
+}
+
+function updateTrackD() {
+    let df = document.getElementById('df');
+    let dt = document.getElementById('dt');
+    let trackd = document.getElementById('trackd');
+
+    let start = (df.min - df.value) / (df.min - df.max) * 100;
+    let end = (dt.min - dt.value) / (dt.min - dt.max) * 100;
+    trackd.style = `background: linear-gradient(to right, #ccc ${start}%, var(--blue) ${start}%, var(--blue) ${end}%, #ccc ${end}%)`;
+
+    let value = document.getElementById('d-value');
+    value.innerText = `${df.value} - ${dt.value}`;
+}
+
+updateTrackB();
+updateTrackD();
+
 function updateMap() {
     let url = document.location.origin + document.location.pathname;
 
@@ -8,20 +89,6 @@ function updateMap() {
     let en = document.getElementById('en').value;
     let df = document.getElementById('df').value;
     let dt = document.getElementById('dt').value;
-
-    if (bf > bt-9) {
-        document.getElementById('bf').value = bt-9;
-        bf = bt-9;
-    }
-    document.getElementById('bf-value').innerText = bf;
-    document.getElementById('bt-value').innerText = bt;
-
-    if (df > dt) {
-        document.getElementById('df').value = dt;
-        df = dt;
-    }
-    document.getElementById('df-value').innerText = df;
-    document.getElementById('dt-value').innerText = dt;
 
     Promise.allSettled([
         fetch(`${url}data?s=${sex}&bf=${bf}&bt=${bt}&en=${en}&df=${df}&dt=${dt}&absolut=${absolut}`, { headers: new Headers({ 'Accept': 'application/json' })})

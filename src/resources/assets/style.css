@@ -261,10 +261,75 @@ fieldset label {
     min-width: 8rem;
 }
 
+.slide-wrapper {
+    height: 3rem;
+}
+
 .slide {
     display: flex;
+    position: relative;
+    width: 10rem;
 }
 
 .slide > input[type=range] {
-    vertical-align: middle;
+    appearance: none;
+    position: absolute;
+    outline: none;
+    background-color: transparent;
+    pointer-events: none;
+    margin: auto;
+}
+
+.slide > input[type=range]::-moz-range-track,
+.slide > input[type=range]::-webkit-slider-runnable-track {
+    appearance: none;
+    height: 4px;
+}
+
+.slide > input[type=range]::-moz-range-thumb,
+.slide > input[type=range]::-webkit-slider-thumb {
+    appearance: none;
+    cursor: pointer;
+    background-color: var(--blue);
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px gray;
+    pointer-events: auto;
+}
+
+.slide-wrapper #trackb,
+.slide-wrapper #trackd {
+    width: 100%;
+    height: 6px;
+    position: absolute;
+    background-color: #ccc;
+    margin: 10px auto;
+}
+
+.slide-wrapper > .slide-value {
+    font-size: smaller;
+    display: block;
+    position: relative;
+    background-color: var(--blue);
+    color: white;
+    padding: 0.2rem .6rem;
+    border-radius: 3px;
+    text-align: center;
+    margin: 1.6rem auto 0 auto;
+    width: fit-content;
+}
+
+.slide-wrapper > .slide-value::before {
+    content: "";
+    display: block;
+    position: absolute;
+    margin: 0 auto;
+    background-color: var(--blue);
+    width: 8px;
+    height: 8px;
+    rotate: 45deg;
+    top: -4px;
+    z-index: -10;
+    left: 0;
+    right: 0;
 }

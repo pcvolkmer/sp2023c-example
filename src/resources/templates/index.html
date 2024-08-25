@@ -42,21 +42,16 @@
                             </select>
                         </div>
                         <div>
-                            <label for="bf">
-                                Jahrgang von:
+                            <label>
+                                Jahrgang:
                             </label>
-                            <div class="slide">
-                                <input id="bf" type="range" min="1900" max="2000" value="1900" step="10" />
-                                <span id="bf-value">1900</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="bt">
-                                Jahrgang bis:
-                            </label>
-                            <div class="slide">
-                                <input id="bt" type="range" min="1909" max="2009" value="2009" step="10" />
-                                <span id="bt-value">2009</span>
+                            <div class="slide-wrapper">
+                                <div class="slide">
+                                    <div id="trackb"></div>
+                                    <input id="bf" type="range" min="1900" max="2000" value="1900" step="10" oninput="onInputBf()" />
+                                    <input id="bt" type="range" min="1909" max="2009" value="2009" step="10" oninput="onInputBt()" />
+                                </div>
+                                <span id="b-value" class="slide-value">1900 - 2009</span>
                             </div>
                         </div>
                     </fieldset>
@@ -97,20 +92,15 @@
                         </div>
                         <div>
                             <label for="df">
-                                Diagnosen von:
+                                Diagnosezeitraum:
                             </label>
-                            <div class="slide">
-                                <input id="df" type="range" min="2014" max="2024" value="2014" />
-                                <span id="df-value">2014</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="dt">
-                                Diagnosen bis:
-                            </label>
-                            <div class="slide">
-                                <input id="dt" type="range" min="2014" max="2024" value="2024" />
-                                <span id="dt-value">2024</span>
+                            <div class="slide-wrapper">
+                                <div class="slide">
+                                    <div id="trackd"></div>
+                                    <input id="df" type="range" min="2014" max="2024" value="2014" oninput="onInputDf()" />
+                                    <input id="dt" type="range" min="2014" max="2024" value="2024" oninput="onInputDt()" />
+                                </div>
+                                <span id="d-value" class="slide-value">2014 - 2024</span>
                             </div>
                         </div>
                     </fieldset>
