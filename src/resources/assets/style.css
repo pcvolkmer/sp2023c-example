@@ -261,6 +261,10 @@ fieldset label {
     min-width: 8rem;
 }
 
+input-startend-range {
+    width: 10rem;
+}
+
 .slide-wrapper {
     height: 3rem;
 }

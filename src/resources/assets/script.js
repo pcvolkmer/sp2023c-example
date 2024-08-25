@@ -1,94 +1,226 @@
-function onInputBf() {
-    let bf = document.getElementById('bf');
-    let bt = document.getElementById('bt');
+class InputStartEndRange extends HTMLElement {
+    static observedAttributes = ['start', 'end'];
 
-    if (parseInt(bf.value) >= parseInt(bt.value)-9) {
-        bf.value = parseInt(bt.value)-9;
+    constructor() {
+        super();
+
+        this._internals = this.attachInternals();
+
+        this._internals.startMin = this.getAttribute('start-min') ? this.getAttribute('start-min') : 0;
+        this._internals.startMax = this.getAttribute('start-max') ? this.getAttribute('start-max') : 10;
+        this._internals.endMin = this.getAttribute('end-min') ? this.getAttribute('end-min') : 0;
+        this._internals.endMax = this.getAttribute('end-max') ? this.getAttribute('end-max') : 10;
+
+        this._internals.start = this.getAttribute('start') ? this.getAttribute('start') : this._internals.startMin;
+        this._internals.end = this.getAttribute('end') ? this.getAttribute('end') : this._internals.endMax;
+
+        this._internals.step = this.getAttribute('step') ? this.getAttribute('step') : 1;
     }
 
-    updateTrackB();
-}
-
-function onInputBt() {
-    let bf = document.getElementById('bf');
-    let bt = document.getElementById('bt');
-
-    if (parseInt(bf.value) === parseInt(bf.max)) {
-        bf.value = parseInt(bt.value)-9;
+    get start() {
+        return this._internals.start;
     }
 
-    if (parseInt(bf.value) >= parseInt(bt.value)-9) {
-        bt.value = parseInt(bf.value)+9;
+    set start(value) {
+        this._internals.start = value;
+        this.shadowRoot.getElementById('start').value = value;
+        this.updateTrack();
     }
 
-    updateTrackB();
-}
-
-function updateTrackB() {
-    let bf = document.getElementById('bf');
-    let bt = document.getElementById('bt');
-    let trackb = document.getElementById('trackb');
-
-    let start = (bf.min - bf.value) / (bf.min - bf.max) * 100;
-    let end = (bt.min - bt.value) / (bt.min - bt.max) * 100;
-    trackb.style = `background: linear-gradient(to right, #ccc ${start}%, var(--blue) ${start}%, var(--blue) ${end}%, #ccc ${end}%)`;
-
-    let value = document.getElementById('b-value');
-    value.innerText = `${bf.value} - ${bt.value}`;
-}
-
-function onInputDf() {
-    let df = document.getElementById('df');
-    let dt = document.getElementById('dt');
-
-    if (parseInt(df.value) >= parseInt(dt.value)) {
-        df.value = parseInt(dt.value);
+    get end() {
+        return this._internals.end;
     }
 
-    updateTrackD();
-}
-
-function onInputDt() {
-    let df = document.getElementById('df');
-    let dt = document.getElementById('dt');
-
-    if (parseInt(df.value) === parseInt(df.max)) {
-        df.value = parseInt(dt.value);
+    set end(value) {
+        this._internals.end = value;
+        this.shadowRoot.getElementById('end').value = value;
+        this.updateTrack();
     }
 
-    if (parseInt(df.value) >= parseInt(dt.value)) {
-        dt.value = parseInt(df.value);
+    connectedCallback() {
+        let template = document.createElement('template');
+        template.innerHTML = `<style>
+                                .slide-wrapper {
+                                    height: 3rem;
+                                }
+                                
+                                .slide {
+                                    display: flex;
+                                    position: relative;
+                                    width: 100%;
+                                }
+                                
+                                .slide > input[type=range] {
+                                    appearance: none;
+                                    position: absolute;
+                                    outline: none;
+                                    background-color: transparent;
+                                    pointer-events: none;
+                                    margin: auto;
+                                    height: 24px;
+                                    width: 100%;
+                                }
+                                
+                                .slide > input[type=range]::-moz-range-track {
+                                    appearance: none;
+                                    height: 4px;
+                                }
+                                
+                                .slide > input[type=range]::-webkit-slider-runnable-track {
+                                    appearance: none;
+                                    height: 4px;
+                                }
+                                
+                                .slide > input[type=range]::-moz-range-thumb {
+                                    box-sizing: border-box;
+                                    appearance: none;
+                                    cursor: pointer;
+                                    background-color: var(--blue);
+                                    border: 2px solid white;
+                                    border-radius: 50%;
+                                    box-shadow: 0 1px 2px gray;
+                                    pointer-events: auto;
+                                    width: 20px;
+                                    height: 20px;
+                                }
+                                
+                                .slide > input[type=range]::-webkit-slider-thumb {
+                                    box-sizing: border-box;
+                                    appearance: none;
+                                    cursor: pointer;
+                                    background-color: var(--blue);
+                                    border: 2px solid white;
+                                    border-radius: 50%;
+                                    box-shadow: 0 1px 2px gray;
+                                    pointer-events: auto;
+                                    width: 20px;
+                                    height: 20px;
+                                    margin-top: -7px;
+                                }
+                                
+                                .slide-wrapper #track {
+                                    width: 100%;
+                                    height: 6px;
+                                    position: absolute;
+                                    background-color: #ccc;
+                                    border-radius: 3px;
+                                    margin: 10px auto;
+                                }
+                                
+                                .slide-wrapper > .slide-value {
+                                    font-size: smaller;
+                                    display: block;
+                                    position: relative;
+                                    background-color: var(--blue);
+                                    color: white;
+                                    padding: 0.2rem .6rem;
+                                    border-radius: 3px;
+                                    text-align: center;
+                                    margin: 1.8rem auto 0 auto;
+                                    width: fit-content;
+                                }
+                                
+                                .slide-wrapper > .slide-value::before {
+                                    content: "";
+                                    display: block;
+                                    position: absolute;
+                                    margin: 0 auto;
+                                    background-color: var(--blue);
+                                    width: 8px;
+                                    height: 8px;
+                                    rotate: 45deg;
+                                    top: -4px;
+                                    z-index: -10;
+                                    left: 0;
+                                    right: 0;
+                                }
+                            </style>
+                            <div class="slide-wrapper">
+                                <div class="slide">
+                                    <div id="track"></div>
+                                    <input id="start" type="range" min="${this._internals.startMin}" max="${this._internals.endMin}" value="${this._internals.start}" step="${this._internals.step}" />
+                                    <input id="end" type="range" min="${this._internals.startMax}" max="${this._internals.endMax}" value="${this._internals.end}" step="${this._internals.step}" />
+                                </div>
+                                <span id="value" class="slide-value">2014 - 2024</span>
+                            </div>`
+        const shadowRoot = this.attachShadow({mode: 'open'});
+        shadowRoot.appendChild(template.content.cloneNode(true));
+
+        this.updateTrack();
+
+        shadowRoot.getElementById('start').oninput = () => {
+            let start = shadowRoot.getElementById('start');
+            let end = shadowRoot.getElementById('end');
+            if (parseInt(start.value) >= parseInt(end.value) - (this._internals.step-1)) {
+                start.value = parseInt(end.value) - (this._internals.step-1);
+            }
+            this.updateTrack();
+        };
+
+        shadowRoot.getElementById('start').onchange = () => {
+            this.dispatchEvent(new CustomEvent('change', { start: this._internals.start, end: this._internals.end }));
+        };
+
+        shadowRoot.getElementById('end').oninput = () => {
+            let start = shadowRoot.getElementById('start');
+            let end = shadowRoot.getElementById('end');
+
+            if (parseInt(start.value) === parseInt(start.max)) {
+                start.value = parseInt(end.value) - (this._internals.step-1);
+            }
+
+            if (parseInt(start.value) >= parseInt(end.value) - (this._internals.step-1)) {
+                end.value = parseInt(start.value) + (this._internals.step-1);
+            }
+
+            this.updateTrack();
+        };
+
+        shadowRoot.getElementById('end').onchange = () => {
+            this.dispatchEvent(new CustomEvent('change', { start: this._internals.start, end: this._internals.end }));
+        };
     }
 
-    updateTrackD();
+    updateTrack = () => {
+        let startElem = this.shadowRoot.getElementById('start');
+        let endElem = this.shadowRoot.getElementById('end');
+        let trackElem = this.shadowRoot.getElementById('track');
+
+        let start = (startElem.min - startElem.value) / (startElem.min - startElem.max) * 100;
+        let end = (endElem.min - endElem.value) / (endElem.min - endElem.max) * 100;
+        trackElem.style = `background: linear-gradient(to right, #ccc ${start}%, var(--blue) ${start}%, var(--blue) ${end}%, #ccc ${end}%)`;
+
+        let valueElem = this.shadowRoot.getElementById('value');
+        valueElem.innerText = `${startElem.value} - ${endElem.value}`;
+
+        this._internals.start = startElem.value;
+        this._internals.end = endElem.value;
+    }
 }
 
-function updateTrackD() {
-    let df = document.getElementById('df');
-    let dt = document.getElementById('dt');
-    let trackd = document.getElementById('trackd');
+customElements.define('input-startend-range', InputStartEndRange);
 
-    let start = (df.min - df.value) / (df.min - df.max) * 100;
-    let end = (dt.min - dt.value) / (dt.min - dt.max) * 100;
-    trackd.style = `background: linear-gradient(to right, #ccc ${start}%, var(--blue) ${start}%, var(--blue) ${end}%, #ccc ${end}%)`;
+document.getElementById('birthyear').addEventListener('change', (_) => { updateMap() });
+document.getElementById('diagnosisyear').addEventListener('change', (_) => { updateMap() });
 
-    let value = document.getElementById('d-value');
-    value.innerText = `${df.value} - ${dt.value}`;
+function resetMap() {
+    document.getElementById('birthyear').start = '1900';
+    document.getElementById('birthyear').end = '2009';
+    document.getElementById('diagnosisyear').start = '2014';
+    document.getElementById('diagnosisyear').end = '2024';
+    setTimeout(updateMap, 250);
 }
-
-updateTrackB();
-updateTrackD();
 
 function updateMap() {
     let url = document.location.origin + document.location.pathname;
 
     let absolut = document.getElementById('mode').value === 'absolut'
     let sex = document.getElementById('sex').value;
-    let bf = document.getElementById('bf').value;
-    let bt = document.getElementById('bt').value;
+    let bf = document.getElementById('birthyear').start;
+    let bt = document.getElementById('birthyear').end;
     let en = document.getElementById('en').value;
-    let df = document.getElementById('df').value;
-    let dt = document.getElementById('dt').value;
+    let df = document.getElementById('diagnosisyear').start;
+    let dt = document.getElementById('diagnosisyear').end;
 
     Promise.allSettled([
         fetch(`${url}data?s=${sex}&bf=${bf}&bt=${bt}&en=${en}&df=${df}&dt=${dt}&absolut=${absolut}`, { headers: new Headers({ 'Accept': 'application/json' })})
