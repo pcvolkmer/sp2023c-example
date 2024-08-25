@@ -213,8 +213,8 @@ main {
 }
 
 #chart {
-    width: 580px;
-    height: 580px;
+    width: 560px;
+    height: 560px;
     border: 1px solid #cccccc;
     border-radius: 3px;
     background-color: white;
@@ -262,7 +262,7 @@ fieldset label {
 }
 
 input-startend-range {
-    width: 10rem;
+    width: 14rem;
 }
 
 .slide-wrapper {
