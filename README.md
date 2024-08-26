@@ -4,6 +4,10 @@ Vorstellung einer möglichen Benutzeroberfläche für das BZKF Studienprotokoll 
 
 ![Screenshot](docs/screenshot.png)
 
+Zudem werden Diagramme mit Statistiken angezeigt.
+
+![Screenshot](docs/statistics.png)
+
 ## Geokoordinaten, -informationen und weitere verwendete Software
 
 Die Angaben zu den Koordinaten eines Kreises wurden

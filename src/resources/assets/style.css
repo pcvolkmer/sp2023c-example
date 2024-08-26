@@ -337,3 +337,23 @@ input-startend-range {
     left: 0;
     right: 0;
 }
+
+#statistics {
+    display: grid;
+    grid-gap: 1em;
+    grid-template:
+            "a b" 50%
+            "c c" 50% / 1fr 1fr;
+
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    background-color: white;
+}
+
+#statistics > div {
+    width: 360px;
+    height: 360px;
+
+    margin: 0 auto;
+    padding: 1rem;
+}

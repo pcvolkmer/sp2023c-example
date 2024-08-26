@@ -321,8 +321,9 @@ function updateMap() {
 
         chartElem.className = '';
         chart.setOption(option);
-
     });
+
+    updateStatistics();
 }
 
 function drawMap() {
@@ -351,4 +352,102 @@ function drawMap() {
         echarts.registerMap('GEO', res[0].value);
         updateMap();
     });
+}
+
+function drawStatistics() {
+    let sex = document.getElementById('sex').value;
+    let bf = document.getElementById('birthyear').start;
+    let bt = document.getElementById('birthyear').end;
+    let en = document.getElementById('en').value;
+    let df = document.getElementById('diagnosisyear').start;
+    let dt = document.getElementById('diagnosisyear').end;
+
+    statistics_charts = [];
+
+    // Init charts
+    Array.from(document.getElementById('statistics').children).forEach(elem => {
+        let chartDom = document.getElementById(elem.id);
+
+        switch (elem.id) {
+            case 'st-sex':
+                statistics_charts[elem.id] = {title: 'Geschlecht', chart: echarts.init(chartDom)};
+                break;
+            case 'st-birth':
+                statistics_charts[elem.id] = {title: 'Jahrgang', chart: echarts.init(chartDom)};
+                break;
+            case 'st-entity':
+                statistics_charts[elem.id] = {title: 'Entität', chart: echarts.init(chartDom)};
+                break;
+            case 'st-diagnosisyear':
+                statistics_charts[elem.id] = {title: 'Diagnosejahr', chart: echarts.init(chartDom)};
+                break;
+        }
+    });
+
+    updateStatistics();
+}
+
+function updateStatistics() {
+    let url = document.location.origin + document.location.pathname;
+
+    let sex = document.getElementById('sex').value;
+    let bf = document.getElementById('birthyear').start;
+    let bt = document.getElementById('birthyear').end;
+    let en = document.getElementById('en').value;
+    let df = document.getElementById('diagnosisyear').start;
+    let dt = document.getElementById('diagnosisyear').end;
+
+    fetch(`${url}statistics?s=${sex}&bf=${bf}&bt=${bt}&en=${en}&df=${df}&dt=${dt}`, {headers: new Headers({'Accept': 'application/json'})})
+        .then(res => res.json())
+        .then(data => {
+            for (const key in data) {
+                let itemData = data[key];
+
+                let option = {
+                    title: {
+                        left: 'center'
+                    },
+                    tooltip: {
+                        trigger: 'item'
+                    },
+                    series: [
+                        {
+                            type: 'pie',
+                            radius: ['30%', '60%'],
+                            label: {
+                                show: false,
+                            },
+                            labelLine: {
+                                show: false
+                            },
+                            emphasis: {
+                                label: {
+                                    show: false
+                                }
+                            },
+                            data: itemData.sort((a,b) => b.value - a.value)
+                        }
+                    ]
+                };
+
+                switch (key) {
+                    case 'icd10':
+                        option.title.text = 'Entität';
+                        statistics_charts['st-entity'].chart.setOption(option);
+                        break;
+                    case 'diagnosis_year':
+                        option.title.text = 'Diagnosedatum';
+                        statistics_charts['st-diagnosisyear'].chart.setOption(option);
+                        break;
+                    case 'birth_decade':
+                        option.title.text = 'Jahrgang';
+                        statistics_charts['st-birth'].chart.setOption(option);
+                        break;
+                    case 'sex':
+                        option.title.text = 'Geschlecht';
+                        statistics_charts['st-sex'].chart.setOption(option);
+                        break;
+                }
+            }
+        });
 }

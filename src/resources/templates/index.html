@@ -115,6 +115,14 @@
                 </form>
             </div>
         </div>
+
+        <h3>Statistiken</h3>
+        <div id="statistics">
+            <div id="st-sex"></div>
+            <div id="st-birth"></div>
+            <div id="st-entity"></div>
+            <div id="st-diagnosisyear"></div>
+        </div>
     </main>
     <script src="assets/echarts.min.js"></script>
     <script src="assets/script.js"></script>
@@ -122,6 +130,10 @@
         window.onload = () => {
             var chart;
             drawMap();
+
+            // statistics
+            var statistics_charts;
+            drawStatistics();
         };
     </script>
 </body>

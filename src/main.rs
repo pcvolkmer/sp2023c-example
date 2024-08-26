@@ -94,6 +94,24 @@ impl DistrictPopulation {
     }
 }
 
+// statistics
+
+#[derive(Serialize)]
+struct Statistics {
+    icd10: Vec<StatisticsEntry>,
+    diagnosis_year: Vec<StatisticsEntry>,
+    birth_decade: Vec<StatisticsEntry>,
+    sex: Vec<StatisticsEntry>,
+}
+
+#[derive(Serialize)]
+struct StatisticsEntry {
+    name: String,
+    value: usize
+}
+
+//
+
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {}
@@ -110,6 +128,31 @@ fn all_entries() -> Vec<Entry> {
     }
 
     vec![]
+}
+
+fn get_statistics(entries: &[Entry]) -> Statistics {
+    Statistics {
+        icd10: entries.iter()
+            .sorted_by_key(|e| e.icd10.to_string())
+            .chunk_by(|e| e.icd10.to_string()).into_iter()
+            .map(|(name, e)| StatisticsEntry { name, value: e.count() })
+            .collect_vec(),
+        diagnosis_year: entries.iter()
+            .sorted_by_key(|e| e.diagnosis_year.to_string())
+            .chunk_by(|e| e.diagnosis_year.to_string()).into_iter()
+            .map(|(name, e)| StatisticsEntry { name, value: e.count() })
+            .collect_vec(),
+        birth_decade: entries.iter()
+            .sorted_by_key(|e| e.birth_decade.to_string())
+            .chunk_by(|e| e.birth_decade.to_string()).into_iter()
+            .map(|(name, e)| StatisticsEntry { name, value: e.count() })
+            .collect_vec(),
+        sex: entries.iter()
+            .sorted_by_key(|e| e.sex.to_string())
+            .chunk_by(|e| e.sex.to_string()).into_iter()
+            .map(|(name, e)| StatisticsEntry { name, value: e.count() })
+            .collect_vec(),
+    }
 }
 
 async fn query_config() -> Response {
@@ -242,6 +285,81 @@ async fn api_search(query: Query<HashMap<String, String>>) -> Response {
     Json::from(filtered_entries).into_response()
 }
 
+async fn statistics(query: Query<HashMap<String, String>>) -> Response {
+    let entity = match query.get("en") {
+        Some(state) => state.to_string(),
+        None => String::new(),
+    };
+
+    let diagnosis_year_min = match query.get("df") {
+        Some(state) => state.to_string(),
+        None => String::new(),
+    };
+
+    let diagnosis_year_max = match query.get("dt") {
+        Some(state) => state.to_string(),
+        None => String::new(),
+    };
+
+    let birth_decade_min = match query.get("bf") {
+        Some(state) => state.to_string(),
+        None => String::new(),
+    };
+
+    let birth_decade_max = match query.get("bt") {
+        Some(state) => state.to_string(),
+        None => String::new(),
+    };
+
+    let sex = match query.get("s") {
+        Some(state) => state.to_string(),
+        None => String::new(),
+    };
+    
+    let filtered_entries = match query.get("ags") {
+        Some(ags) => all_entries().into_iter().filter(|e| e.ags == *ags).collect_vec(),
+        None => all_entries(),
+    }
+        .into_iter()
+        .filter(|e| entity.trim().is_empty() || entity.trim() == e.icd10)
+        .filter(|e| {
+            diagnosis_year_min.trim().is_empty()
+                || if let Ok(value) = u32::from_str(diagnosis_year_min.trim()) {
+                e.diagnosis_year >= value
+            } else {
+                false
+            }
+        })
+        .filter(|e| {
+            diagnosis_year_max.trim().is_empty()
+                || if let Ok(value) = u32::from_str(diagnosis_year_max.trim()) {
+                e.diagnosis_year <= value
+            } else {
+                false
+            }
+        })
+        .filter(|e| {
+            birth_decade_min.trim().is_empty()
+                || if let Ok(value) = u32::from_str(birth_decade_min.trim()) {
+                e.birth_decade >= value
+            } else {
+                false
+            }
+        })
+        .filter(|e| {
+            birth_decade_max.trim().is_empty()
+                || if let Ok(value) = u32::from_str(birth_decade_max.trim()) {
+                e.birth_decade <= value
+            } else {
+                false
+            }
+        })
+        .filter(|e| sex.trim().is_empty() || sex.trim() == e.sex)
+        .collect_vec();
+
+    Json::from(get_statistics(&filtered_entries)).into_response()
+}
+
 async fn index() -> IndexTemplate {
     IndexTemplate {}
 }
@@ -283,6 +401,7 @@ async fn main() {
         .route("/config", get(query_config))
         .route("/data", get(api_search))
         .route("/districts", get(query_counties))
+        .route("/statistics", get(statistics))
         .route(
             "/assets/*path",
             get(|path| async { serve_asset(path).await }),
