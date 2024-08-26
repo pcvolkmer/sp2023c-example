@@ -37,7 +37,7 @@ form {
     text-align: center;
 }
 
-button, a.button {
+button, .button {
     padding: .6rem 1rem;
     border-radius: 3px;
     outline: none;
@@ -47,7 +47,7 @@ button, input {
     font-size: 1.2em;
 }
 
-button, a.button {
+button, .button {
     background-color: var(--blue);
     color: white;
     border: none;
@@ -55,22 +55,23 @@ button, a.button {
     display: inline-block;
 }
 
-button.medium {
+button.medium, .button.medium {
     font-size: medium;
+    padding: 0 1rem;
 }
 
-button:hover, a.button:hover {
+button:hover, .button:hover {
     background-color: var(--darkblue);
     text-decoration: none;
 
     transition: background-color .1s, box-shadow .1s, box-shadow .1s;
 }
 
-button, a.button {
+button, .button {
     box-shadow: 0 1px 2px #99a;
 }
 
-button:hover, a.button:hover {
+button:hover, .button:hover {
     box-shadow: 0 2px 4px #99a;
 }
 
@@ -336,6 +337,17 @@ input-startend-range {
     z-index: -10;
     left: 0;
     right: 0;
+}
+
+#statistics-head span {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1.6rem;
+    height: 1.6rem;
+}
+
+#statistics-head span > strong{
+    color: var(--blue);
 }
 
 #statistics {

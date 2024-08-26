@@ -247,7 +247,7 @@ function updateMap() {
             }
         });
 
-        let name_map = res[1].value;
+        name_map = res[1].value;
 
         let max = data.length > 0
             ? Math.max.apply(Math, data.map(e => e.value))
@@ -283,7 +283,6 @@ function updateMap() {
             },
             toolbox: {
                 show: true,
-                //orient: 'vertical',
                 left: 'left',
                 top: 'top',
                 feature: {
@@ -308,9 +307,20 @@ function updateMap() {
                         },
                         itemStyle: {
                             areaColor: '#fff',
+                            borderColor: '#f00',
+                            borderWidth: 1
                         }
                     },
-                    select: false,
+                    select: {
+                        label: {
+                            show: false
+                        },
+                        itemStyle: {
+                            areaColor: '#fff',
+                            borderColor: '#f00',
+                            borderWidth: 1
+                        }
+                    },
                     label: {
                         show: false
                     },
@@ -352,6 +362,14 @@ function drawMap() {
         echarts.registerMap('GEO', res[0].value);
         updateMap();
     });
+
+    chart.on('click', (params) => {
+        if (params.data && name_map[params.data.name]) {
+            updateStatistics(params.event.target.selected ? params.data.name : '');
+            return;
+        }
+        updateStatistics();
+    });
 }
 
 function drawStatistics() {
@@ -387,7 +405,14 @@ function drawStatistics() {
     updateStatistics();
 }
 
-function updateStatistics() {
+function updateStatistics(district = '') {
+    // Update headline
+    if (district.length === 0) {
+        document.getElementById('statistics-head').innerHTML = `<span>Statistiken</span>`;
+    } else {
+        document.getElementById('statistics-head').innerHTML = `<span>Statistiken für <strong>${name_map[district]}</strong></span>`;
+    }
+
     let url = document.location.origin + document.location.pathname;
 
     let sex = document.getElementById('sex').value;
@@ -397,7 +422,7 @@ function updateStatistics() {
     let df = document.getElementById('diagnosisyear').start;
     let dt = document.getElementById('diagnosisyear').end;
 
-    fetch(`${url}statistics?s=${sex}&bf=${bf}&bt=${bt}&en=${en}&df=${df}&dt=${dt}`, {headers: new Headers({'Accept': 'application/json'})})
+    fetch(`${url}statistics?s=${sex}&bf=${bf}&bt=${bt}&en=${en}&df=${df}&dt=${dt}&ags=${district}`, {headers: new Headers({'Accept': 'application/json'})})
         .then(res => res.json())
         .then(data => {
             for (const key in data) {

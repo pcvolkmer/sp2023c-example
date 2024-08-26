@@ -315,9 +315,9 @@ async fn statistics(query: Query<HashMap<String, String>>) -> Response {
         Some(state) => state.to_string(),
         None => String::new(),
     };
-    
+
     let filtered_entries = match query.get("ags") {
-        Some(ags) => all_entries().into_iter().filter(|e| e.ags == *ags).collect_vec(),
+        Some(ags) => all_entries().into_iter().filter(|e| ags.is_empty() || e.ags == *ags).collect_vec(),
         None => all_entries(),
     }
         .into_iter()
