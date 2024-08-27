@@ -50,10 +50,11 @@ lazy_static! {
                 record.get(2).unwrap()
             } else {
                 record.get(3).unwrap()
-            }.to_string()
+            }
+            .to_string()
         ))
         .unique()
-        .collect::<BTreeMap<_,_>>();
+        .collect::<BTreeMap<_, _>>();
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -107,7 +108,7 @@ struct Statistics {
 #[derive(Serialize)]
 struct StatisticsEntry {
     name: String,
-    value: usize
+    value: u32,
 }
 
 //
@@ -132,25 +133,45 @@ fn all_entries() -> Vec<Entry> {
 
 fn get_statistics(entries: &[Entry]) -> Statistics {
     Statistics {
-        icd10: entries.iter()
+        icd10: entries
+            .iter()
             .sorted_by_key(|e| e.icd10.to_string())
-            .chunk_by(|e| e.icd10.to_string()).into_iter()
-            .map(|(name, e)| StatisticsEntry { name, value: e.count() })
+            .chunk_by(|e| e.icd10.to_string())
+            .into_iter()
+            .map(|(name, e)| StatisticsEntry {
+                name,
+                value: e.map(|e| e.count).sum(),
+            })
             .collect_vec(),
-        diagnosis_year: entries.iter()
+        diagnosis_year: entries
+            .iter()
             .sorted_by_key(|e| e.diagnosis_year.to_string())
-            .chunk_by(|e| e.diagnosis_year.to_string()).into_iter()
-            .map(|(name, e)| StatisticsEntry { name, value: e.count() })
+            .chunk_by(|e| e.diagnosis_year.to_string())
+            .into_iter()
+            .map(|(name, e)| StatisticsEntry {
+                name,
+                value: e.map(|e| e.count).sum(),
+            })
             .collect_vec(),
-        birth_decade: entries.iter()
+        birth_decade: entries
+            .iter()
             .sorted_by_key(|e| e.birth_decade.to_string())
-            .chunk_by(|e| e.birth_decade.to_string()).into_iter()
-            .map(|(name, e)| StatisticsEntry { name, value: e.count() })
+            .chunk_by(|e| e.birth_decade.to_string())
+            .into_iter()
+            .map(|(name, e)| StatisticsEntry {
+                name,
+                value: e.map(|e| e.count).sum(),
+            })
             .collect_vec(),
-        sex: entries.iter()
+        sex: entries
+            .iter()
             .sorted_by_key(|e| e.sex.to_string())
-            .chunk_by(|e| e.sex.to_string()).into_iter()
-            .map(|(name, e)| StatisticsEntry { name, value: e.count() })
+            .chunk_by(|e| e.sex.to_string())
+            .into_iter()
+            .map(|(name, e)| StatisticsEntry {
+                name,
+                value: e.map(|e| e.count).sum(),
+            })
             .collect_vec(),
     }
 }
@@ -317,45 +338,48 @@ async fn statistics(query: Query<HashMap<String, String>>) -> Response {
     };
 
     let filtered_entries = match query.get("ags") {
-        Some(ags) => all_entries().into_iter().filter(|e| ags.is_empty() || e.ags == *ags).collect_vec(),
+        Some(ags) => all_entries()
+            .into_iter()
+            .filter(|e| ags.is_empty() || e.ags == *ags)
+            .collect_vec(),
         None => all_entries(),
     }
-        .into_iter()
-        .filter(|e| entity.trim().is_empty() || entity.trim() == e.icd10)
-        .filter(|e| {
-            diagnosis_year_min.trim().is_empty()
-                || if let Ok(value) = u32::from_str(diagnosis_year_min.trim()) {
+    .into_iter()
+    .filter(|e| entity.trim().is_empty() || entity.trim() == e.icd10)
+    .filter(|e| {
+        diagnosis_year_min.trim().is_empty()
+            || if let Ok(value) = u32::from_str(diagnosis_year_min.trim()) {
                 e.diagnosis_year >= value
             } else {
                 false
             }
-        })
-        .filter(|e| {
-            diagnosis_year_max.trim().is_empty()
-                || if let Ok(value) = u32::from_str(diagnosis_year_max.trim()) {
+    })
+    .filter(|e| {
+        diagnosis_year_max.trim().is_empty()
+            || if let Ok(value) = u32::from_str(diagnosis_year_max.trim()) {
                 e.diagnosis_year <= value
             } else {
                 false
             }
-        })
-        .filter(|e| {
-            birth_decade_min.trim().is_empty()
-                || if let Ok(value) = u32::from_str(birth_decade_min.trim()) {
+    })
+    .filter(|e| {
+        birth_decade_min.trim().is_empty()
+            || if let Ok(value) = u32::from_str(birth_decade_min.trim()) {
                 e.birth_decade >= value
             } else {
                 false
             }
-        })
-        .filter(|e| {
-            birth_decade_max.trim().is_empty()
-                || if let Ok(value) = u32::from_str(birth_decade_max.trim()) {
+    })
+    .filter(|e| {
+        birth_decade_max.trim().is_empty()
+            || if let Ok(value) = u32::from_str(birth_decade_max.trim()) {
                 e.birth_decade <= value
             } else {
                 false
             }
-        })
-        .filter(|e| sex.trim().is_empty() || sex.trim() == e.sex)
-        .collect_vec();
+    })
+    .filter(|e| sex.trim().is_empty() || sex.trim() == e.sex)
+    .collect_vec();
 
     Json::from(get_statistics(&filtered_entries)).into_response()
 }
