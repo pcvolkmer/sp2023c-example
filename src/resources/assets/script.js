@@ -429,7 +429,16 @@ function updateStatistics() {
         .then(res => res.json())
         .then(data => {
             for (const key in data) {
-                let itemData = data[key];
+                let itemData = data[key].sort((a,b) => b.value - a.value);
+
+                // Move "Other" to end
+                if (key === 'icd10') {
+                    itemData = data[key].filter(e => e.name !== 'Other').sort((a,b) => b.value - a.value);
+                    let other = data[key].filter(e => e.name === 'Other');
+                    if (other.length === 1) {
+                        itemData.push(other[0]);
+                    }
+                }
 
                 let option = {
                     title: {
@@ -453,7 +462,7 @@ function updateStatistics() {
                                     show: false
                                 }
                             },
-                            data: itemData.sort((a,b) => b.value - a.value)
+                            data: itemData
                         }
                     ]
                 };
