@@ -365,9 +365,11 @@ function drawMap() {
 
     chart.on('click', (params) => {
         if (params.data && name_map[params.data.name]) {
-            updateStatistics(params.event.target.selected ? params.data.name : '');
+            selected_district = params.event.target.selected ? params.data.name : '';
+            updateStatistics();
             return;
         }
+        selected_district = '';
         updateStatistics();
     });
 }
@@ -381,6 +383,7 @@ function drawStatistics() {
     let dt = document.getElementById('diagnosisyear').end;
 
     statistics_charts = [];
+    selected_district = '';
 
     // Init charts
     Array.from(document.getElementById('statistics').children).forEach(elem => {
@@ -405,12 +408,12 @@ function drawStatistics() {
     updateStatistics();
 }
 
-function updateStatistics(district = '') {
+function updateStatistics() {
     // Update headline
-    if (district.length === 0) {
+    if (selected_district.length === 0) {
         document.getElementById('statistics-head').innerHTML = `<span>Statistiken</span>`;
     } else {
-        document.getElementById('statistics-head').innerHTML = `<span>Statistiken für <strong>${name_map[district]}</strong></span>`;
+        document.getElementById('statistics-head').innerHTML = `<span>Statistiken für <strong>${name_map[selected_district]}</strong></span>`;
     }
 
     let url = document.location.origin + document.location.pathname;
@@ -422,7 +425,7 @@ function updateStatistics(district = '') {
     let df = document.getElementById('diagnosisyear').start;
     let dt = document.getElementById('diagnosisyear').end;
 
-    fetch(`${url}statistics?s=${sex}&bf=${bf}&bt=${bt}&en=${en}&df=${df}&dt=${dt}&ags=${district}`, {headers: new Headers({'Accept': 'application/json'})})
+    fetch(`${url}statistics?s=${sex}&bf=${bf}&bt=${bt}&en=${en}&df=${df}&dt=${dt}&ags=${selected_district}`, {headers: new Headers({'Accept': 'application/json'})})
         .then(res => res.json())
         .then(data => {
             for (const key in data) {
