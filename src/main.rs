@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::time::Duration;
 use std::{env, fs};
@@ -113,6 +113,33 @@ struct StatisticsEntry {
 
 //
 
+#[derive(Deserialize)]
+struct Filter {
+    #[serde(rename = "ags", default)]
+    ags: String,
+
+    #[serde(rename = "en", default)]
+    entity: String,
+
+    #[serde(rename = "df", default)]
+    diagnosis_year_min: String,
+
+    #[serde(rename = "dt", default)]
+    diagnosis_year_max: String,
+
+    #[serde(rename = "bf", default)]
+    birth_decade_min: String,
+
+    #[serde(rename = "dt", default)]
+    birth_decade_max: String,
+
+    #[serde(rename = "s", default)]
+    sex: String,
+
+    #[serde(rename = "absolut", default)]
+    absolute: String,
+}
+
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {}
@@ -201,43 +228,7 @@ async fn query_counties() -> Response {
     Json::from(DISTRICT_NAMES.clone()).into_response()
 }
 
-async fn api_search(query: Query<HashMap<String, String>>) -> Response {
-    let entity = match query.get("en") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let diagnosis_year_min = match query.get("df") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let diagnosis_year_max = match query.get("dt") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let birth_decade_min = match query.get("bf") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let birth_decade_max = match query.get("bt") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let sex = match query.get("s") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let absolute = if let Some(value) = query.get("absolut") {
-        value == "true"
-    } else {
-        false
-    };
-
+async fn api_search(filter: Query<Filter>) -> Response {
     #[derive(Serialize)]
     struct Statistics {
         name: String,
@@ -246,46 +237,46 @@ async fn api_search(query: Query<HashMap<String, String>>) -> Response {
 
     let filtered_entries = all_entries()
         .into_iter()
-        .filter(|e| entity.trim().is_empty() || entity.trim() == e.icd10)
+        .filter(|e| filter.entity.trim().is_empty() || filter.entity.trim() == e.icd10)
         .filter(|e| {
-            diagnosis_year_min.trim().is_empty()
-                || if let Ok(value) = u32::from_str(diagnosis_year_min.trim()) {
+            filter.diagnosis_year_min.trim().is_empty()
+                || if let Ok(value) = u32::from_str(filter.diagnosis_year_min.trim()) {
                     e.diagnosis_year >= value
                 } else {
                     false
                 }
         })
         .filter(|e| {
-            diagnosis_year_max.trim().is_empty()
-                || if let Ok(value) = u32::from_str(diagnosis_year_max.trim()) {
+            filter.diagnosis_year_max.trim().is_empty()
+                || if let Ok(value) = u32::from_str(filter.diagnosis_year_max.trim()) {
                     e.diagnosis_year <= value
                 } else {
                     false
                 }
         })
         .filter(|e| {
-            birth_decade_min.trim().is_empty()
-                || if let Ok(value) = u32::from_str(birth_decade_min.trim()) {
+            filter.birth_decade_min.trim().is_empty()
+                || if let Ok(value) = u32::from_str(filter.birth_decade_min.trim()) {
                     e.birth_decade >= value
                 } else {
                     false
                 }
         })
         .filter(|e| {
-            birth_decade_max.trim().is_empty()
-                || if let Ok(value) = u32::from_str(birth_decade_max.trim()) {
+            filter.birth_decade_max.trim().is_empty()
+                || if let Ok(value) = u32::from_str(filter.birth_decade_max.trim()) {
                     e.birth_decade <= value
                 } else {
                     false
                 }
         })
-        .filter(|e| sex.trim().is_empty() || sex.trim() == e.sex)
+        .filter(|e| filter.sex.trim().is_empty() || filter.sex.trim() == e.sex)
         .sorted_by_key(|e| e.ags.to_string())
         .chunk_by(|e| e.ags[0..5].to_string())
         .into_iter()
         .map(|group| Statistics {
             name: group.0.to_string(),
-            value: if absolute {
+            value: if filter.absolute == "true" {
                 group.1.map(|e| e.count).sum::<u32>() as f32
             } else {
                 let pat_count = group.1.map(|e| e.count).sum::<u32>() as f32;
@@ -306,79 +297,50 @@ async fn api_search(query: Query<HashMap<String, String>>) -> Response {
     Json::from(filtered_entries).into_response()
 }
 
-async fn statistics(query: Query<HashMap<String, String>>) -> Response {
-    let entity = match query.get("en") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let diagnosis_year_min = match query.get("df") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let diagnosis_year_max = match query.get("dt") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let birth_decade_min = match query.get("bf") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let birth_decade_max = match query.get("bt") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let sex = match query.get("s") {
-        Some(state) => state.to_string(),
-        None => String::new(),
-    };
-
-    let filtered_entries = match query.get("ags") {
-        Some(ags) => all_entries()
+async fn statistics(filter: Query<Filter>) -> Response {
+    let filtered_entries = if filter.ags.is_empty() {
+        all_entries()
+    } else {
+        all_entries()
             .into_iter()
-            .filter(|e| ags.is_empty() || e.ags == *ags)
-            .collect_vec(),
-        None => all_entries(),
+            .filter(|e| e.ags == *filter.ags)
+            .collect_vec()
     }
     .into_iter()
-    .filter(|e| entity.trim().is_empty() || entity.trim() == e.icd10)
+    .filter(|e| filter.entity.trim().is_empty() || filter.entity.trim() == e.icd10)
     .filter(|e| {
-        diagnosis_year_min.trim().is_empty()
-            || if let Ok(value) = u32::from_str(diagnosis_year_min.trim()) {
+        filter.diagnosis_year_min.trim().is_empty()
+            || if let Ok(value) = u32::from_str(filter.diagnosis_year_min.trim()) {
                 e.diagnosis_year >= value
             } else {
                 false
             }
     })
     .filter(|e| {
-        diagnosis_year_max.trim().is_empty()
-            || if let Ok(value) = u32::from_str(diagnosis_year_max.trim()) {
+        filter.diagnosis_year_max.trim().is_empty()
+            || if let Ok(value) = u32::from_str(filter.diagnosis_year_max.trim()) {
                 e.diagnosis_year <= value
             } else {
                 false
             }
     })
     .filter(|e| {
-        birth_decade_min.trim().is_empty()
-            || if let Ok(value) = u32::from_str(birth_decade_min.trim()) {
+        filter.birth_decade_min.trim().is_empty()
+            || if let Ok(value) = u32::from_str(filter.birth_decade_min.trim()) {
                 e.birth_decade >= value
             } else {
                 false
             }
     })
     .filter(|e| {
-        birth_decade_max.trim().is_empty()
-            || if let Ok(value) = u32::from_str(birth_decade_max.trim()) {
+        filter.birth_decade_max.trim().is_empty()
+            || if let Ok(value) = u32::from_str(filter.birth_decade_max.trim()) {
                 e.birth_decade <= value
             } else {
                 false
             }
     })
-    .filter(|e| sex.trim().is_empty() || sex.trim() == e.sex)
+    .filter(|e| filter.sex.trim().is_empty() || filter.sex.trim() == e.sex)
     .collect_vec();
 
     Json::from(get_statistics(&filtered_entries)).into_response()
