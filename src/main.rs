@@ -140,6 +140,48 @@ struct Filter {
     absolute: String,
 }
 
+impl Filter {
+    
+    fn apply(&self, entries: Vec<Entry>) -> Vec<Entry> {
+        entries.into_iter().filter(|e| self.entity.trim().is_empty() || self.entity.trim() == e.icd10)
+            .filter(|e| {
+                self.diagnosis_year_min.trim().is_empty()
+                    || if let Ok(value) = u32::from_str(self.diagnosis_year_min.trim()) {
+                    e.diagnosis_year >= value
+                } else {
+                    false
+                }
+            })
+            .filter(|e| {
+                self.diagnosis_year_max.trim().is_empty()
+                    || if let Ok(value) = u32::from_str(self.diagnosis_year_max.trim()) {
+                    e.diagnosis_year <= value
+                } else {
+                    false
+                }
+            })
+            .filter(|e| {
+                self.birth_decade_min.trim().is_empty()
+                    || if let Ok(value) = u32::from_str(self.birth_decade_min.trim()) {
+                    e.birth_decade >= value
+                } else {
+                    false
+                }
+            })
+            .filter(|e| {
+                self.birth_decade_max.trim().is_empty()
+                    || if let Ok(value) = u32::from_str(self.birth_decade_max.trim()) {
+                    e.birth_decade <= value
+                } else {
+                    false
+                }
+            })
+            .filter(|e| self.sex.trim().is_empty() || self.sex.trim() == e.sex)
+            .collect_vec()
+    }
+    
+}
+
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {}
@@ -235,42 +277,8 @@ async fn api_search(filter: Query<Filter>) -> Response {
         value: f32,
     }
 
-    let filtered_entries = all_entries()
+    let filtered_entries = filter.apply(all_entries())
         .into_iter()
-        .filter(|e| filter.entity.trim().is_empty() || filter.entity.trim() == e.icd10)
-        .filter(|e| {
-            filter.diagnosis_year_min.trim().is_empty()
-                || if let Ok(value) = u32::from_str(filter.diagnosis_year_min.trim()) {
-                    e.diagnosis_year >= value
-                } else {
-                    false
-                }
-        })
-        .filter(|e| {
-            filter.diagnosis_year_max.trim().is_empty()
-                || if let Ok(value) = u32::from_str(filter.diagnosis_year_max.trim()) {
-                    e.diagnosis_year <= value
-                } else {
-                    false
-                }
-        })
-        .filter(|e| {
-            filter.birth_decade_min.trim().is_empty()
-                || if let Ok(value) = u32::from_str(filter.birth_decade_min.trim()) {
-                    e.birth_decade >= value
-                } else {
-                    false
-                }
-        })
-        .filter(|e| {
-            filter.birth_decade_max.trim().is_empty()
-                || if let Ok(value) = u32::from_str(filter.birth_decade_max.trim()) {
-                    e.birth_decade <= value
-                } else {
-                    false
-                }
-        })
-        .filter(|e| filter.sex.trim().is_empty() || filter.sex.trim() == e.sex)
         .sorted_by_key(|e| e.ags.to_string())
         .chunk_by(|e| e.ags[0..5].to_string())
         .into_iter()
@@ -299,49 +307,13 @@ async fn api_search(filter: Query<Filter>) -> Response {
 
 async fn statistics(filter: Query<Filter>) -> Response {
     let filtered_entries = if filter.ags.is_empty() {
-        all_entries()
+        filter.apply(all_entries())
     } else {
-        all_entries()
+        filter.apply(all_entries())
             .into_iter()
             .filter(|e| e.ags == *filter.ags)
             .collect_vec()
-    }
-    .into_iter()
-    .filter(|e| filter.entity.trim().is_empty() || filter.entity.trim() == e.icd10)
-    .filter(|e| {
-        filter.diagnosis_year_min.trim().is_empty()
-            || if let Ok(value) = u32::from_str(filter.diagnosis_year_min.trim()) {
-                e.diagnosis_year >= value
-            } else {
-                false
-            }
-    })
-    .filter(|e| {
-        filter.diagnosis_year_max.trim().is_empty()
-            || if let Ok(value) = u32::from_str(filter.diagnosis_year_max.trim()) {
-                e.diagnosis_year <= value
-            } else {
-                false
-            }
-    })
-    .filter(|e| {
-        filter.birth_decade_min.trim().is_empty()
-            || if let Ok(value) = u32::from_str(filter.birth_decade_min.trim()) {
-                e.birth_decade >= value
-            } else {
-                false
-            }
-    })
-    .filter(|e| {
-        filter.birth_decade_max.trim().is_empty()
-            || if let Ok(value) = u32::from_str(filter.birth_decade_max.trim()) {
-                e.birth_decade <= value
-            } else {
-                false
-            }
-    })
-    .filter(|e| filter.sex.trim().is_empty() || filter.sex.trim() == e.sex)
-    .collect_vec();
+    };
 
     Json::from(get_statistics(&filtered_entries)).into_response()
 }
