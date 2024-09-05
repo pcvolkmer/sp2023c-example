@@ -1,11 +1,12 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::time::Duration;
-use std::{env, fs};
+use std::{env, fs, path};
 
 use askama::Template;
 use axum::body::Body;
 use axum::extract::{Path, Query};
+use axum::http::header::CONTENT_TYPE;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -323,11 +324,32 @@ async fn index() -> IndexTemplate {
 }
 
 async fn serve_asset(path: Option<Path<String>>) -> impl IntoResponse {
+    fn get_mimetype(path: &path::Path) -> Option<&str> {
+        if let Some(extension) = path.extension() {
+            return match extension.to_str() {
+                Some("css") => Some("text/css"),
+                Some("js") => Some("application/javascript"),
+                Some("geojson") => Some("application/geo+json"),
+                _ => None
+            }
+        }
+        None
+    }
+    
     match path {
         Some(path) => match ASSETS.get_file(path.to_string()) {
-            Some(file) => Response::builder()
-                .status(StatusCode::OK)
-                .body(Body::from(file.contents())),
+            Some(file) => {
+                if let Some(mime_type) = get_mimetype(file.path()) {
+                    Response::builder()
+                        .status(StatusCode::OK)
+                        .header(CONTENT_TYPE, mime_type)
+                        .body(Body::from(file.contents()))
+                } else {
+                    Response::builder()
+                        .status(StatusCode::OK)
+                        .body(Body::from(file.contents()))
+                }
+            },
             None => Response::builder()
                 .status(404)
                 .body(Body::from("".as_bytes())),
