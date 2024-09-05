@@ -8,6 +8,18 @@ Zudem werden Diagramme mit Statistiken angezeigt.
 
 ![Screenshot](docs/statistics.png)
 
+## Konfiguration
+
+Über die Umgebungsvariable `LISTENER_ADDRESS` kann die Adresse und der Port festgelegt werden. Standardwert ist
+`[::]:3000`.
+
+Die Umgebungsvariable `SAMPLE_DATA_FILE` muss auf eine Datei mit Daten zeigen. Die Datei muss dabei als CSV-Datei
+vorliegen und die folgenden Spalten beinhalten:
+
+```
+icd10,ags,diagnosis_year,birth_decade,sex,count
+```
+
 ## Geokoordinaten, -informationen und weitere verwendete Software
 
 Die Angaben zu den Koordinaten eines Kreises wurden

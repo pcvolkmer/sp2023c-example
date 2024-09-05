@@ -393,7 +393,9 @@ async fn main() {
     #[cfg(debug_assertions)]
     let app = app.layer(TraceLayer::new_for_http());
 
-    match tokio::net::TcpListener::bind("[::]:3000").await {
+    let listener_address = env::var("LISTENER_ADDRESS").unwrap_or_else(|_| "[::]:3000".to_string());
+    
+    match tokio::net::TcpListener::bind(listener_address).await {
         Ok(listener) => {
             let address = listener.local_addr().unwrap();
             if address.is_ipv6() {
