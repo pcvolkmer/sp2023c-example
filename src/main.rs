@@ -38,9 +38,7 @@ lazy_static! {
             population: district.1.map(|e| e.population).sum(),
         })
         .collect_vec();
-}
 
-lazy_static! {
     static ref DISTRICT_NAMES: BTreeMap<String, String> = ReaderBuilder::new()
         .from_reader(AGS_CSV.as_bytes())
         .records()
