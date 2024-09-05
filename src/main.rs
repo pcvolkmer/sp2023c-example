@@ -1,8 +1,3 @@
-use std::collections::BTreeMap;
-use std::str::FromStr;
-use std::time::Duration;
-use std::{env, fs, path};
-
 use askama::Template;
 use axum::body::Body;
 use axum::extract::{Path, Query};
@@ -17,8 +12,13 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use moka::future::Cache;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::str::FromStr;
+use std::time::Duration;
+use std::{env, fs, path};
 #[cfg(debug_assertions)]
 use tower_http::trace::TraceLayer;
+use tracing::log::{info, error};
 
 static AGS_CSV: &str = include_str!("resources/ags.csv");
 
@@ -140,45 +140,45 @@ struct Filter {
 }
 
 impl Filter {
-    
     fn apply(&self, entries: Vec<Entry>) -> Vec<Entry> {
-        entries.into_iter().filter(|e| self.entity.trim().is_empty() || self.entity.trim() == e.icd10)
+        entries
+            .into_iter()
+            .filter(|e| self.entity.trim().is_empty() || self.entity.trim() == e.icd10)
             .filter(|e| {
                 self.diagnosis_year_min.trim().is_empty()
                     || if let Ok(value) = u32::from_str(self.diagnosis_year_min.trim()) {
-                    e.diagnosis_year >= value
-                } else {
-                    false
-                }
+                        e.diagnosis_year >= value
+                    } else {
+                        false
+                    }
             })
             .filter(|e| {
                 self.diagnosis_year_max.trim().is_empty()
                     || if let Ok(value) = u32::from_str(self.diagnosis_year_max.trim()) {
-                    e.diagnosis_year <= value
-                } else {
-                    false
-                }
+                        e.diagnosis_year <= value
+                    } else {
+                        false
+                    }
             })
             .filter(|e| {
                 self.birth_decade_min.trim().is_empty()
                     || if let Ok(value) = u32::from_str(self.birth_decade_min.trim()) {
-                    e.birth_decade >= value
-                } else {
-                    false
-                }
+                        e.birth_decade >= value
+                    } else {
+                        false
+                    }
             })
             .filter(|e| {
                 self.birth_decade_max.trim().is_empty()
                     || if let Ok(value) = u32::from_str(self.birth_decade_max.trim()) {
-                    e.birth_decade <= value
-                } else {
-                    false
-                }
+                        e.birth_decade <= value
+                    } else {
+                        false
+                    }
             })
             .filter(|e| self.sex.trim().is_empty() || self.sex.trim() == e.sex)
             .collect_vec()
     }
-    
 }
 
 #[derive(Template)]
@@ -276,7 +276,8 @@ async fn api_search(filter: Query<Filter>) -> Response {
         value: f32,
     }
 
-    let filtered_entries = filter.apply(all_entries())
+    let filtered_entries = filter
+        .apply(all_entries())
         .into_iter()
         .sorted_by_key(|e| e.ags.to_string())
         .chunk_by(|e| e.ags[0..5].to_string())
@@ -308,7 +309,8 @@ async fn statistics(filter: Query<Filter>) -> Response {
     let filtered_entries = if filter.ags.is_empty() {
         filter.apply(all_entries())
     } else {
-        filter.apply(all_entries())
+        filter
+            .apply(all_entries())
             .into_iter()
             .filter(|e| e.ags == *filter.ags)
             .collect_vec()
@@ -328,12 +330,12 @@ async fn serve_asset(path: Option<Path<String>>) -> impl IntoResponse {
                 Some("css") => Some("text/css"),
                 Some("js") => Some("application/javascript"),
                 Some("geojson") => Some("application/geo+json"),
-                _ => None
-            }
+                _ => None,
+            };
         }
         None
     }
-    
+
     match path {
         Some(path) => match ASSETS.get_file(path.to_string()) {
             Some(file) => {
@@ -347,7 +349,7 @@ async fn serve_asset(path: Option<Path<String>>) -> impl IntoResponse {
                         .status(StatusCode::OK)
                         .body(Body::from(file.contents()))
                 }
-            },
+            }
             None => Response::builder()
                 .status(404)
                 .body(Body::from("".as_bytes())),
@@ -374,6 +376,8 @@ async fn main() {
         .time_to_idle(Duration::from_secs(5 * 60))
         .build();
 
+    info!("Starting application");
+
     let app = Router::new()
         .route("/", get(index))
         .route("/config", get(query_config))
@@ -389,6 +393,19 @@ async fn main() {
     #[cfg(debug_assertions)]
     let app = app.layer(TraceLayer::new_for_http());
 
-    let listener = tokio::net::TcpListener::bind("[::]:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap()
+    match tokio::net::TcpListener::bind("[::]:3000").await {
+        Ok(listener) => {
+            let address = listener.local_addr().unwrap();
+            if address.is_ipv6() {
+                info!("Listening on [{}]:{}", address.ip(), address.port());
+            } else {
+                info!("Listening on {}:{}", address.ip(), address.port());
+            }
+            match axum::serve(listener, app).await {
+                Ok(_) => {},
+                Err(err) => error!("Unable to start application: {}", err),
+            }
+        },
+        Err(err) => error!("Unable to bind server port: {}", err),
+    }
 }

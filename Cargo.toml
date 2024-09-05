@@ -23,9 +23,11 @@ include_dir = "0.7"
 strsim = "0.11"
 regex = "1.10"
 lazy_static = "1.5"
+simple-log = "1.7"
 
 moka = { version = "0.12", features = ["future"] }
 futures = { version = "0.3" }
+log = "0.4.22"
 
 [profile.release]
 opt-level = "s"
