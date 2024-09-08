@@ -18,7 +18,7 @@ use std::time::Duration;
 use std::{env, fs, path};
 #[cfg(debug_assertions)]
 use tower_http::trace::TraceLayer;
-use tracing::log::{info, error};
+use tracing::log::{error, info};
 
 static AGS_CSV: &str = include_str!("resources/ags.csv");
 
@@ -38,7 +38,6 @@ lazy_static! {
             population: district.1.map(|e| e.population).sum(),
         })
         .collect_vec();
-
     static ref DISTRICT_NAMES: BTreeMap<String, String> = ReaderBuilder::new()
         .from_reader(AGS_CSV.as_bytes())
         .records()
@@ -102,6 +101,32 @@ struct Statistics {
     diagnosis_year: Vec<StatisticsEntry>,
     birth_decade: Vec<StatisticsEntry>,
     sex: Vec<StatisticsEntry>,
+}
+
+impl Statistics {
+    fn from(entries: &[Entry]) -> Self {
+        macro_rules! statistics {
+            ($values:expr, $key:expr) => {
+                $values
+                    .iter()
+                    .sorted_by_key($key)
+                    .chunk_by($key)
+                    .into_iter()
+                    .map(|(name, e)| StatisticsEntry {
+                        name,
+                        value: e.map(|e| e.count).sum(),
+                    })
+                    .collect_vec()
+            };
+        }
+
+        Statistics {
+            icd10: statistics!(entries, |e| e.icd10.to_string()),
+            diagnosis_year: statistics!(entries, |e| e.diagnosis_year.to_string()),
+            birth_decade: statistics!(entries, |e| e.birth_decade.to_string()),
+            sex: statistics!(entries, |e| e.sex.to_string()),
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -199,51 +224,6 @@ fn all_entries() -> Vec<Entry> {
     vec![]
 }
 
-fn get_statistics(entries: &[Entry]) -> Statistics {
-    Statistics {
-        icd10: entries
-            .iter()
-            .sorted_by_key(|e| e.icd10.to_string())
-            .chunk_by(|e| e.icd10.to_string())
-            .into_iter()
-            .map(|(name, e)| StatisticsEntry {
-                name,
-                value: e.map(|e| e.count).sum(),
-            })
-            .collect_vec(),
-        diagnosis_year: entries
-            .iter()
-            .sorted_by_key(|e| e.diagnosis_year.to_string())
-            .chunk_by(|e| e.diagnosis_year.to_string())
-            .into_iter()
-            .map(|(name, e)| StatisticsEntry {
-                name,
-                value: e.map(|e| e.count).sum(),
-            })
-            .collect_vec(),
-        birth_decade: entries
-            .iter()
-            .sorted_by_key(|e| e.birth_decade.to_string())
-            .chunk_by(|e| e.birth_decade.to_string())
-            .into_iter()
-            .map(|(name, e)| StatisticsEntry {
-                name,
-                value: e.map(|e| e.count).sum(),
-            })
-            .collect_vec(),
-        sex: entries
-            .iter()
-            .sorted_by_key(|e| e.sex.to_string())
-            .chunk_by(|e| e.sex.to_string())
-            .into_iter()
-            .map(|(name, e)| StatisticsEntry {
-                name,
-                value: e.map(|e| e.count).sum(),
-            })
-            .collect_vec(),
-    }
-}
-
 async fn query_config() -> Response {
     let mut result = BTreeMap::new();
     result.insert(
@@ -316,7 +296,7 @@ async fn statistics(filter: Query<Filter>) -> Response {
             .collect_vec()
     };
 
-    Json::from(get_statistics(&filtered_entries)).into_response()
+    Json::from(Statistics::from(&filtered_entries)).into_response()
 }
 
 async fn index() -> IndexTemplate {
@@ -394,7 +374,7 @@ async fn main() {
     let app = app.layer(TraceLayer::new_for_http());
 
     let listener_address = env::var("LISTENER_ADDRESS").unwrap_or_else(|_| "[::]:3000".to_string());
-    
+
     match tokio::net::TcpListener::bind(listener_address).await {
         Ok(listener) => {
             let address = listener.local_addr().unwrap();
@@ -404,10 +384,10 @@ async fn main() {
                 info!("Listening on {}:{}", address.ip(), address.port());
             }
             match axum::serve(listener, app).await {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(err) => error!("Unable to start application: {}", err),
             }
-        },
+        }
         Err(err) => error!("Unable to bind server port: {}", err),
     }
 }
