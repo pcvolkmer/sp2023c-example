@@ -1,3 +1,34 @@
+import * as echarts from 'echarts/core';
+import { MapChart, PieChart } from 'echarts/charts';
+
+import { CanvasRenderer } from 'echarts/renderers';
+
+import {
+    TitleComponent,
+    ToolboxComponent,
+    TooltipComponent,
+    DatasetComponent,
+    TransformComponent,
+    VisualMapComponent
+} from 'echarts/components';
+
+echarts.use([
+    PieChart,
+    MapChart,
+    TitleComponent,
+    ToolboxComponent,
+    TooltipComponent,
+    DatasetComponent,
+    TransformComponent,
+    CanvasRenderer,
+    VisualMapComponent
+]);
+
+var chart;
+var name_map;
+var selected_district;
+var statistics_charts;
+
 class InputStartEndRange extends HTMLElement {
     static observedAttributes = ['start', 'end'];
 
@@ -203,7 +234,7 @@ customElements.define('input-startend-range', InputStartEndRange);
 document.getElementById('birthyear').addEventListener('change', (_) => { updateMap() });
 document.getElementById('diagnosisyear').addEventListener('change', (_) => { updateMap() });
 
-function resetMap() {
+export function resetMap() {
     document.getElementById('birthyear').start = '1900';
     document.getElementById('birthyear').end = '2009';
     document.getElementById('diagnosisyear').start = '2014';
@@ -211,7 +242,9 @@ function resetMap() {
     setTimeout(updateMap, 250);
 }
 
-function updateMap() {
+window.resetMap = resetMap;
+
+export function updateMap() {
     let url = document.location.origin + document.location.pathname;
 
     let absolut = document.getElementById('mode').value === 'absolut'
@@ -336,7 +369,9 @@ function updateMap() {
     updateStatistics();
 }
 
-function drawMap() {
+window.updateMap = updateMap;
+
+export function drawMap() {
     let chartElem = document.getElementById('chart');
 
     if (chartElem === null) {
@@ -374,7 +409,9 @@ function drawMap() {
     });
 }
 
-function drawStatistics() {
+window.drawMap = drawMap;
+
+export function drawStatistics() {
     let sex = document.getElementById('sex').value;
     let bf = document.getElementById('birthyear').start;
     let bt = document.getElementById('birthyear').end;
@@ -408,7 +445,9 @@ function drawStatistics() {
     updateStatistics();
 }
 
-function updateStatistics() {
+window.drawStatistics = drawStatistics;
+
+export function updateStatistics() {
     // Update headline
     if (selected_district.length === 0) {
         document.getElementById('statistics-head').innerHTML = `<span>Statistiken</span>`;
@@ -488,3 +527,5 @@ function updateStatistics() {
             }
         });
 }
+
+window.updateStatistics = updateStatistics;

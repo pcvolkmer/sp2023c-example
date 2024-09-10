@@ -1,4 +1,8 @@
 /.idea
+/node_modules
 /target
+
+/src/resources/assets/*.js
+/src/resources/assets/*.js.map
 
 Cargo.lock

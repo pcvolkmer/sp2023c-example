@@ -1,0 +1,5 @@
+/.idea
+/target
+
+/src/resources/assets/*.js
+/src/resources/assets/*.js.map
