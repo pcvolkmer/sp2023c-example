@@ -31,6 +31,7 @@ lazy_static! {
         .flatten()
         .map(|record| DistrictPopulation::from_record(&record))
         .unique_by(|e| e.ags.to_string())
+        .sorted_by_key(|e| e.ags.to_string())
         .chunk_by(|e| e.ags[0..5].to_string())
         .into_iter()
         .map(|district| DistrictPopulation {
