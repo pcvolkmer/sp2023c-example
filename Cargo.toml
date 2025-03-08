@@ -22,7 +22,6 @@ itertools = { version = "0.14" }
 include_dir = "0.7"
 strsim = "0.11"
 regex = "1.11"
-lazy_static = "1.5"
 simple-log = "2.1"
 
 moka = { version = "0.12", features = ["future"] }

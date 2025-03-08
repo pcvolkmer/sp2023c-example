@@ -9,11 +9,11 @@ use axum::{Json, Router};
 use csv::{ReaderBuilder, StringRecord};
 use include_dir::{include_dir, Dir};
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use moka::future::Cache;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use std::{env, fs, path};
 #[cfg(debug_assertions)]
@@ -24,8 +24,8 @@ static AGS_CSV: &str = include_str!("resources/ags.csv");
 
 static ASSETS: Dir = include_dir!("src/resources/assets");
 
-lazy_static! {
-    static ref DISTRICT_POPULATIONS: Vec<DistrictPopulation> = ReaderBuilder::new()
+static DISTRICT_POPULATIONS: LazyLock<Vec<DistrictPopulation>> = LazyLock::new(|| {
+    ReaderBuilder::new()
         .from_reader(AGS_CSV.as_bytes())
         .records()
         .flatten()
@@ -38,23 +38,28 @@ lazy_static! {
             ags: district.0,
             population: district.1.map(|e| e.population).sum(),
         })
-        .collect_vec();
-    static ref DISTRICT_NAMES: BTreeMap<String, String> = ReaderBuilder::new()
+        .collect_vec()
+});
+
+static DISTRICT_NAMES: LazyLock<BTreeMap<String, String>> = LazyLock::new(|| {
+    ReaderBuilder::new()
         .from_reader(AGS_CSV.as_bytes())
         .records()
         .flatten()
-        .map(|record| (
-            record.get(0).unwrap()[0..5].to_string(),
-            if record.get(3).unwrap().is_empty() {
-                record.get(2).unwrap()
-            } else {
-                record.get(3).unwrap()
-            }
-            .to_string()
-        ))
+        .map(|record| {
+            (
+                record.get(0).unwrap()[0..5].to_string(),
+                if record.get(3).unwrap().is_empty() {
+                    record.get(2).unwrap()
+                } else {
+                    record.get(3).unwrap()
+                }
+                .to_string(),
+            )
+        })
         .unique()
-        .collect::<BTreeMap<_, _>>();
-}
+        .collect::<BTreeMap<_, _>>()
+});
 
 #[derive(Serialize, Deserialize, Clone)]
 struct Entry {
@@ -221,7 +226,6 @@ fn all_entries() -> Vec<Entry> {
             .map(|record| Entry::from_record(&record))
             .collect_vec();
     }
-
     vec![]
 }
 
