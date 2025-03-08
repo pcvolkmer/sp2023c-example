@@ -9,6 +9,7 @@ use axum::{Json, Router};
 use csv::{ReaderBuilder, StringRecord};
 use include_dir::{include_dir, Dir};
 use itertools::Itertools;
+use log::warn;
 use moka::future::Cache;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -218,15 +219,17 @@ struct IndexTemplate {}
 
 fn all_entries() -> Vec<Entry> {
     let data_file = env::var("SAMPLE_DATA_FILE").unwrap_or("/data/sample.csv".to_string());
-    if let Ok(data) = fs::read_to_string(data_file) {
-        return ReaderBuilder::new()
+    if let Ok(data) = fs::read_to_string(&data_file) {
+        ReaderBuilder::new()
             .from_reader(data.as_bytes())
             .records()
             .flatten()
             .map(|record| Entry::from_record(&record))
-            .collect_vec();
+            .collect_vec()
+    } else {
+        warn!("Cannot open samples file '{}'", data_file);
+        vec![]
     }
-    vec![]
 }
 
 async fn query_config() -> Response {
