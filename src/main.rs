@@ -62,6 +62,21 @@ static DISTRICT_NAMES: LazyLock<BTreeMap<String, String>> = LazyLock::new(|| {
         .collect::<BTreeMap<_, _>>()
 });
 
+static ALL_ENTRIES: LazyLock<Vec<Entry>> = LazyLock::new(|| {
+    let data_file = env::var("SAMPLE_DATA_FILE").unwrap_or("/data/sample.csv".to_string());
+    if let Ok(data) = fs::read_to_string(&data_file) {
+        ReaderBuilder::new()
+            .from_reader(data.as_bytes())
+            .records()
+            .flatten()
+            .map(|record| Entry::from_record(&record))
+            .collect_vec()
+    } else {
+        warn!("Cannot open samples file '{}'", data_file);
+        vec![]
+    }
+});
+
 #[derive(Serialize, Deserialize, Clone)]
 struct Entry {
     icd10: String,
@@ -217,26 +232,11 @@ impl Filter {
 #[template(path = "index.html")]
 struct IndexTemplate {}
 
-fn all_entries() -> Vec<Entry> {
-    let data_file = env::var("SAMPLE_DATA_FILE").unwrap_or("/data/sample.csv".to_string());
-    if let Ok(data) = fs::read_to_string(&data_file) {
-        ReaderBuilder::new()
-            .from_reader(data.as_bytes())
-            .records()
-            .flatten()
-            .map(|record| Entry::from_record(&record))
-            .collect_vec()
-    } else {
-        warn!("Cannot open samples file '{}'", data_file);
-        vec![]
-    }
-}
-
 async fn query_config() -> Response {
     let mut result = BTreeMap::new();
     result.insert(
         "SEX".to_string(),
-        all_entries()
+        ALL_ENTRIES
             .iter()
             .map(|e| e.sex.to_string())
             .unique()
@@ -244,7 +244,7 @@ async fn query_config() -> Response {
     );
     result.insert(
         "ENTITY".to_string(),
-        all_entries()
+        ALL_ENTRIES
             .iter()
             .map(|e| e.icd10.to_string())
             .unique()
@@ -265,7 +265,7 @@ async fn api_search(filter: Query<Filter>) -> Response {
     }
 
     let filtered_entries = filter
-        .apply(all_entries())
+        .apply(ALL_ENTRIES.to_vec())
         .into_iter()
         .sorted_by_key(|e| e.ags.to_string())
         .chunk_by(|e| e.ags[0..5].to_string())
@@ -295,10 +295,10 @@ async fn api_search(filter: Query<Filter>) -> Response {
 
 async fn statistics(filter: Query<Filter>) -> Response {
     let filtered_entries = if filter.ags.is_empty() {
-        filter.apply(all_entries())
+        filter.apply(ALL_ENTRIES.to_vec())
     } else {
         filter
-            .apply(all_entries())
+            .apply(ALL_ENTRIES.to_vec())
             .into_iter()
             .filter(|e| e.ags == *filter.ags)
             .collect_vec()
