@@ -282,7 +282,7 @@ async fn api_search(filter: Query<Filter>) -> Response {
                     .into_iter()
                     .filter(|dp| dp.ags == group.0)
                     .map(|dp| dp.population)
-                    .last()
+                    .next_back()
                     .unwrap_or(0);
 
                 pat_count * 100_000.0 / pop as f32
