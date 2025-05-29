@@ -6,9 +6,8 @@ authors = ["Paul-Christian Volkmer <code@pcvolkmer.de>"]
 license = "AGPL-3"
 
 [dependencies]
-axum = { version = "0.7" }
-askama = { version = "0.12" }
-askama_axum = { version = "0.4" }
+axum = { version = "0.8" }
+askama = { version = "0.14" }
 tokio = { version = "1.41", features = ["rt-multi-thread"] }
 tower-http = { version = "0.6", features = ["trace"] }
 tracing-subscriber = "0.3"
@@ -22,7 +21,7 @@ itertools = { version = "0.14" }
 include_dir = "0.7"
 strsim = "0.11"
 regex = "1.11"
-simple-log = "2.1"
+simple-log = "2.3"
 
 moka = { version = "0.12", features = ["future"] }
 futures = { version = "0.3" }

@@ -3,7 +3,7 @@ use axum::body::Body;
 use axum::extract::{Path, Query};
 use axum::http::header::CONTENT_TYPE;
 use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
+use axum::response::{Html, IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use csv::{ReaderBuilder, StringRecord};
@@ -307,8 +307,9 @@ async fn statistics(filter: Query<Filter>) -> Response {
     Json::from(Statistics::from(&filtered_entries)).into_response()
 }
 
-async fn index() -> IndexTemplate {
-    IndexTemplate {}
+async fn index() -> Result<impl IntoResponse, ()> {
+    let rendered = IndexTemplate {}.render().map_err(|_| ())?;
+    Ok(Html(rendered))
 }
 
 async fn serve_asset(path: Option<Path<String>>) -> impl IntoResponse {
@@ -373,7 +374,7 @@ async fn main() {
         .route("/districts", get(query_counties))
         .route("/statistics", get(statistics))
         .route(
-            "/assets/*path",
+            "/assets/{*path}",
             get(|path| async { serve_asset(path).await }),
         )
         .with_state(cache);
