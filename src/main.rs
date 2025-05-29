@@ -341,11 +341,11 @@ async fn serve_asset(path: Option<Path<String>>) -> impl IntoResponse {
             }
             None => Response::builder()
                 .status(404)
-                .body(Body::from("".as_bytes())),
+                .body(Body::empty()),
         },
         None => Response::builder()
             .status(400)
-            .body(Body::from("".as_bytes())),
+            .body(Body::empty()),
     }
     .unwrap()
 }
